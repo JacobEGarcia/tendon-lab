@@ -1,61 +1,509 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TENDON//LAB</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TENDON//LAB - Tendon-Driven Robotic Hand</title>
+<meta name="description" content="An interactive tendon-driven robotic hand, reconstructed in the browser. Four motion sequences pull a live cable network through 15 articulated joints.">
+<meta property="og:title" content="TENDON//LAB">
+<meta property="og:description" content="Human motion, machine anatomy. A procedural tendon-driven hand you can orbit, scrub, and sequence.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23070908'/%3E%3Cpath d='M9 26V14m5 12V9m5 17V10m5 16V14' stroke='%23b9ff2c' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
-:root{--ink:#dbe9e5;--muted:#71827c;--line:#24332f;--acid:#b9ff2c;--cyan:#36d9ff;--bg:#070908}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}canvas{display:block}
-#stage{position:fixed;inset:0;background:radial-gradient(circle at 55% 45%,#16211c 0,#090c0a 45%,#050706 80%)}
-.vignette{pointer-events:none;position:fixed;inset:0;box-shadow:inset 0 0 180px #000;z-index:2}.grain{pointer-events:none;position:fixed;inset:-80px;z-index:3;opacity:.075;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");animation:g .17s steps(2) infinite}@keyframes g{to{transform:translate(13px,-9px)}}
-header{position:fixed;z-index:5;top:0;left:0;right:0;height:76px;padding:21px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);background:linear-gradient(#070908dd,#07090888)}
-.brand{letter-spacing:.24em;font-weight:700;font-size:14px}.brand b{color:var(--acid)}.status{font-size:10px;letter-spacing:.14em;color:var(--muted)}.dot{display:inline-block;width:6px;height:6px;margin-right:8px;border-radius:50%;background:var(--acid);box-shadow:0 0 12px var(--acid)}
-.left{position:fixed;z-index:5;top:104px;left:28px;width:250px}.eyebrow{font-size:10px;letter-spacing:.2em;color:var(--acid);margin-bottom:14px}.left h1{font:400 44px/0.9 Georgia,serif;letter-spacing:-.05em;margin:0 0 17px}.left p{font:11px/1.7 ui-monospace,monospace;color:#82938d;max-width:210px}.rule{height:1px;background:var(--line);margin:25px 0}
-.readout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.metric label{display:block;color:#61716c;font-size:8px;letter-spacing:.15em}.metric strong{display:block;font-size:16px;font-weight:400;margin-top:5px}.metric strong em{font-style:normal;color:var(--acid)}
-.sequence{position:fixed;z-index:5;right:28px;top:103px;width:210px}.sequence h2{font-size:9px;letter-spacing:.18em;color:#6e7e79;font-weight:400;margin:0 0 12px}.take{padding:12px 0;border-top:1px solid var(--line);cursor:pointer;display:grid;grid-template-columns:25px 1fr auto;align-items:center;color:#71817c;transition:.25s}.take:hover,.take.on{color:var(--ink)}.take.on{border-color:var(--acid)}.take .num{font-size:9px}.take .name{font-size:11px;letter-spacing:.08em}.take .time{font-size:8px}.take.on .num{color:var(--acid)}
-.bottom{position:fixed;z-index:5;left:28px;right:28px;bottom:20px;border:1px solid var(--line);background:#080b09dc;height:75px;display:grid;grid-template-columns:70px 1fr 170px;align-items:center}.play{height:73px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--acid);font-size:20px;cursor:pointer}.timeline{padding:0 20px}.times{display:flex;justify-content:space-between;font-size:8px;color:#64746f;margin-bottom:10px}.track{height:2px;background:#26332f;position:relative;cursor:pointer}.progress{height:100%;width:0;background:var(--acid);box-shadow:0 0 9px #b9ff2c77}.markers{position:absolute;inset:-3px 0}.markers i{position:absolute;height:8px;width:1px;background:#53635d}.controls{display:flex;gap:8px;padding:0 15px}.controls button{font:8px ui-monospace;border:1px solid #2c3b36;color:#72837d;background:#0b100e;padding:8px 9px;cursor:pointer}.controls button.on{border-color:var(--acid);color:var(--acid)}
-.tip{position:fixed;z-index:5;right:29px;bottom:108px;font-size:8px;letter-spacing:.12em;color:#53625d}.corner{position:fixed;width:20px;height:20px;border-color:#47564f;z-index:4}.c1{left:292px;top:91px;border-left:1px solid;border-top:1px solid}.c2{right:252px;top:91px;border-right:1px solid;border-top:1px solid}
-@media(max-width:800px){.left{left:18px;top:90px}.left h1{font-size:34px}.sequence{display:none}.bottom{left:14px;right:14px}.controls{display:none}.bottom{grid-template-columns:60px 1fr}.c1,.c2{display:none}}
+:root{
+  --bg:#070908; --ink:#dcebe6; --muted:#6f7f79; --faint:#4a5852;
+  --line:#223029; --line-soft:#182219;
+  --acid:#b9ff2c; --cyan:#3fd9ff;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Helvetica Neue",Helvetica,"Inter",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--mono)}
+canvas{display:block}
+#stage{position:fixed;inset:0;background:radial-gradient(120% 90% at 50% 38%,#131d17 0%,#0a0e0b 52%,#060807 100%)}
+.vignette{pointer-events:none;position:fixed;inset:0;z-index:2;background:radial-gradient(115% 100% at 50% 46%,transparent 55%,rgba(0,0,0,.42) 100%)}
+
+header{position:fixed;z-index:5;top:0;left:0;right:0;min-height:64px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line-soft);background:linear-gradient(rgba(7,9,8,.92),rgba(7,9,8,.55) 80%,transparent)}
+.brand{font:600 13px/1 var(--mono);letter-spacing:.26em;white-space:nowrap}
+.brand b{color:var(--acid);font-weight:600}
+.status{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.16em;color:var(--muted);white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--acid);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.left{position:fixed;z-index:5;top:96px;left:28px;width:262px;pointer-events:none}
+.left>*{pointer-events:auto}
+.eyebrow{font-size:10px;letter-spacing:.22em;color:var(--acid);margin-bottom:14px}
+.left h1{font:300 38px/1.06 var(--sans);letter-spacing:-.02em;color:var(--ink);margin-bottom:16px}
+.left p{font:11px/1.75 var(--mono);color:#7d8d87;max-width:236px}
+.rule{height:1px;background:var(--line-soft);margin:24px 0 20px}
+.readout{display:grid;grid-template-columns:1fr 1fr;gap:16px 12px}
+.metric label{display:block;color:var(--faint);font-size:8px;letter-spacing:.18em;margin-bottom:6px}
+.metric strong{display:block;font:400 17px/1 var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.metric strong em{font-style:normal;color:var(--acid)}
+
+.sequence{position:fixed;z-index:5;right:28px;top:96px;width:216px}
+.sequence h2{font-size:9px;letter-spacing:.2em;color:var(--faint);font-weight:400;margin-bottom:6px}
+.take{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:12px 2px;border-top:1px solid var(--line-soft);cursor:pointer;color:#66766f;transition:color .2s,border-color .2s;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left;font-family:var(--mono)}
+.take:last-child{border-bottom:1px solid var(--line-soft)}
+.take:hover{color:var(--ink)}
+.take.on{color:var(--ink)}
+.take .num{font-size:9px;color:var(--faint);transition:color .2s}
+.take.on .num{color:var(--acid)}
+.take .name{font-size:11px;letter-spacing:.1em}
+.take .time{font-size:8px;color:var(--faint);font-variant-numeric:tabular-nums}
+.take.on{border-top-color:var(--acid)}
+.take.on+.take{border-top-color:var(--acid)}
+.take:focus-visible{outline:1px solid var(--acid);outline-offset:2px}
+
+.bottom{position:fixed;z-index:5;left:28px;right:28px;bottom:20px;border:1px solid var(--line);background:rgba(8,11,9,.88);backdrop-filter:blur(6px);height:72px;display:grid;grid-template-columns:64px 1fr auto;align-items:stretch}
+.play{width:64px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--acid);font-size:15px;cursor:pointer;font-family:var(--mono)}
+.play:hover{background:rgba(185,255,44,.06)}
+.timeline{padding:0 22px;display:flex;flex-direction:column;justify-content:center}
+.times{display:flex;justify-content:space-between;font-size:9px;color:var(--faint);margin-bottom:11px;font-variant-numeric:tabular-nums}
+.track{height:24px;display:flex;align-items:center;cursor:pointer;position:relative}
+.track::before{content:"";position:absolute;left:0;right:0;height:2px;background:#23322c}
+.progress{position:absolute;left:0;height:2px;background:var(--acid);width:0}
+.head{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--acid);transform:translateX(-50%);left:0}
+.markers{position:absolute;inset:0;pointer-events:none}
+.markers i{position:absolute;top:50%;height:5px;width:1px;background:#3a4a43;transform:translateY(-50%)}
+.controls{display:flex;align-items:center;gap:6px;padding:0 14px;border-left:1px solid var(--line)}
+.controls button{font:9px var(--mono);letter-spacing:.08em;border:1px solid var(--line);color:#6b7b74;background:transparent;padding:8px 10px;cursor:pointer;transition:.2s}
+.controls button:hover{color:var(--ink);border-color:#3a4a43}
+.controls button.on{border-color:var(--acid);color:var(--acid)}
+.controls button:focus-visible,.play:focus-visible{outline:1px solid var(--acid);outline-offset:-1px}
+
+.tip{position:fixed;z-index:4;right:28px;bottom:104px;font-size:8px;letter-spacing:.14em;color:var(--faint)}
+
+.boot{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:var(--bg);transition:opacity .6s;font-size:10px;letter-spacing:.24em;color:var(--muted)}
+.boot.gone{opacity:0;pointer-events:none}
+.boot .err{max-width:420px;padding:0 24px;line-height:1.8;letter-spacing:.06em;text-align:center}
+
+@media(max-width:1180px){.sequence{display:none}}
+@media(min-width:1181px){.seqbar{display:none}}
+@media(max-width:1180px){
+  .seqbar{position:fixed;z-index:5;left:28px;right:28px;bottom:104px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+  .seqbar::-webkit-scrollbar{display:none}
+  .seqbar .take{flex:0 0 auto;width:auto;display:flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid var(--line);background:rgba(8,11,9,.88);color:#66766f}
+  .seqbar .take .time{display:none}
+  .seqbar .take.on{border-color:var(--acid);color:var(--ink)}
+}
+@media(max-width:800px){
+  header{padding:0 16px;min-height:56px}
+  .status .hz{display:none}
+  .left{top:72px;left:16px;right:16px;width:auto}
+  .left h1{font-size:28px;margin-bottom:0}
+  .left p{display:none}
+  .left .rule,.left .readout{display:none}
+  .eyebrow{margin-bottom:8px}
+  .tip{display:none}
+  .bottom{left:12px;right:12px;bottom:12px;grid-template-columns:52px 1fr;height:60px}
+  .play{width:52px}
+  .controls{display:none}
+  .timeline{padding:0 14px}
+  .seqbar{left:12px;right:12px;bottom:84px}
+}
+@media(prefers-reduced-motion:reduce){.dot{animation:none}}
 </style>
 </head>
-<body><div id="stage"></div><div class="vignette"></div><div class="grain"></div>
-<header><div class="brand">TENDON<b>//</b>LAB</div><div class="status"><span class="dot"></span>SIMULATION LIVE &nbsp; / &nbsp; 120 HZ</div></header>
-<section class="left"><div class="eyebrow">RECONSTRUCTED MOTION</div><h1>Human motion.<br>Machine anatomy.</h1><p>A procedural tendon-driven hand reconstructed as linked rigid bodies. Each gesture pulls a live cable network through 15 articulated joints.</p><div class="rule"></div><div class="readout"><div class="metric"><label>JOINTS</label><strong>15</strong></div><div class="metric"><label>TENDONS</label><strong><em>10</em></strong></div><div class="metric"><label>FRAME</label><strong id="frame">0000</strong></div><div class="metric"><label>ERROR</label><strong>0.8°</strong></div></div></section>
-<section class="sequence"><h2>MOTION SEQUENCES</h2><div class="take on" data-seq="0"><span class="num">01</span><span class="name">SYSTEM CHECK</span><span class="time">08.0s</span></div><div class="take" data-seq="1"><span class="num">02</span><span class="name">PINCH / RELEASE</span><span class="time">06.0s</span></div><div class="take" data-seq="2"><span class="num">03</span><span class="name">TENDON WAVE</span><span class="time">07.5s</span></div><div class="take" data-seq="3"><span class="num">04</span><span class="name">POWER GRIP</span><span class="time">06.5s</span></div></section>
-<div class="corner c1"></div><div class="corner c2"></div><div class="tip">DRAG TO ORBIT &nbsp;·&nbsp; SCROLL TO ZOOM</div>
-<div class="bottom"><button class="play" id="play">Ⅱ</button><div class="timeline"><div class="times"><span id="now">00:00:00</span><span id="dur">00:08:00</span></div><div class="track" id="track"><div class="progress" id="progress"></div><div class="markers"><i style="left:25%"></i><i style="left:50%"></i><i style="left:75%"></i></div></div></div><div class="controls"><button id="cables" class="on">CABLES</button><button id="ghost">GHOST</button><button id="reset">RESET</button></div></div>
+<body>
+<div id="stage"></div>
+<div class="vignette"></div>
+
+<header>
+  <div class="brand">TENDON<b>//</b>LAB</div>
+  <div class="status"><span class="dot"></span><span id="statusText">RUNNING</span><span class="hz">&nbsp;/&nbsp;<span id="fps">--</span> FPS</span></div>
+</header>
+
+<section class="left">
+  <div class="eyebrow">RECONSTRUCTED MOTION</div>
+  <h1>Human motion,<br>machine anatomy.</h1>
+  <p>A tendon-driven robotic hand, rebuilt procedurally in the browser. Every gesture pulls a live cable network through 15 articulated joints - drag to orbit, scrub the timeline, or switch sequences.</p>
+  <div class="rule"></div>
+  <div class="readout">
+    <div class="metric"><label>JOINTS</label><strong>15</strong></div>
+    <div class="metric"><label>TENDONS</label><strong><em>10</em></strong></div>
+    <div class="metric"><label>MEAN FLEXION</label><strong id="flexion">0&deg;</strong></div>
+    <div class="metric"><label>CABLE TRAVEL</label><strong id="travel">0.0<em>cm</em></strong></div>
+  </div>
+</section>
+
+<section class="sequence" id="seqPanel" aria-label="Motion sequences">
+  <h2>MOTION SEQUENCES</h2>
+</section>
+<div class="seqbar" id="seqBar" aria-label="Motion sequences"></div>
+
+<div class="tip">DRAG TO ORBIT &nbsp;&middot;&nbsp; SCROLL TO ZOOM &nbsp;&middot;&nbsp; SPACE TO PAUSE</div>
+
+<div class="bottom">
+  <button class="play" id="play" aria-label="Play or pause">&#10074;&#10074;</button>
+  <div class="timeline">
+    <div class="times"><span id="now">00:00.0</span><span id="dur">00:08.0</span></div>
+    <div class="track" id="track">
+      <div class="progress" id="progress"></div>
+      <div class="head" id="head"></div>
+      <div class="markers"><i style="left:25%"></i><i style="left:50%"></i><i style="left:75%"></i></div>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="cables" class="on">CABLES</button>
+    <button id="ghost">GHOST</button>
+    <button id="reset">RESET</button>
+  </div>
+</div>
+
+<div class="boot" id="boot"><div id="bootMsg">INITIALIZING RIG</div></div>
+
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js"}}</script>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
-import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js';
-const host=document.querySelector('#stage'), scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x070a08,.035);
-const camera=new THREE.PerspectiveCamera(34,innerWidth/innerHeight,.1,100); camera.position.set(7.6,4.4,12);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,1.8)); renderer.setSize(innerWidth,innerHeight); renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.08; host.appendChild(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement); controls.target.set(.4,2.4,0); controls.enableDamping=true; controls.minDistance=7; controls.maxDistance=19; controls.autoRotate=true; controls.autoRotateSpeed=.22;
-scene.add(new THREE.HemisphereLight(0xa8d5c9,0x11150f,.85)); const key=new THREE.SpotLight(0xc9ffd7,55,30,.55,.7,1); key.position.set(-5,10,7); scene.add(key); const rim=new THREE.PointLight(0x42dfff,25,18); rim.position.set(6,5,-6);scene.add(rim); const acid=new THREE.PointLight(0xb9ff2c,10,10);acid.position.set(-4,2,3);scene.add(acid);
-const floor=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.MeshStandardMaterial({color:0x080b09,roughness:.82,metalness:.25})); floor.rotation.x=-Math.PI/2;floor.position.y=-2.25;scene.add(floor);
-const grid=new THREE.GridHelper(28,28,0x263b32,0x142019);grid.position.y=-2.23;scene.add(grid);
-const metal=new THREE.MeshStandardMaterial({color:0x7d8b88,metalness:.92,roughness:.24});const dark=new THREE.MeshStandardMaterial({color:0x111716,metalness:.72,roughness:.3});const black=new THREE.MeshStandardMaterial({color:0x050807,metalness:.6,roughness:.38});const jointMat=new THREE.MeshStandardMaterial({color:0xc1cec9,metalness:.85,roughness:.18});
-const hand=new THREE.Group(); hand.rotation.z=-.04; scene.add(hand);
-function cyl(r,l,mat=metal,axis='y'){let g=new THREE.CylinderGeometry(r,r*.88,l,16,1);let m=new THREE.Mesh(g,mat);if(axis==='x')m.rotation.z=Math.PI/2;if(axis==='z')m.rotation.x=Math.PI/2;return m}
-// exposed forearm cage
-const fore=new THREE.Group();fore.position.y=-.6;hand.add(fore); const rings=[];for(let i=0;i<5;i++){let y=i*.58-1.2,r=.72-i*.055;let ring=new THREE.Mesh(new THREE.TorusGeometry(r,.075,10,28),jointMat);ring.rotation.x=Math.PI/2;ring.position.y=y;rings.push(ring);fore.add(ring)}
-for(let a=0;a<6;a++){let rail=cyl(.047,2.45,dark);rail.position.set(Math.cos(a*Math.PI/3)*.6,0,Math.sin(a*Math.PI/3)*.6);rail.rotation.z=Math.sin(a*Math.PI/3)*.10;rail.rotation.x=Math.cos(a*Math.PI/3)*.10;fore.add(rail)}
-for(let i=0;i<3;i++){let gear=new THREE.Mesh(new THREE.TorusGeometry(.28-i*.06,.06,8,22),i===1?black:jointMat);gear.rotation.x=Math.PI/2;gear.position.set(0,-.8+i*.72,.72);fore.add(gear)}
-const wrist=new THREE.Mesh(new THREE.CylinderGeometry(.66,.58,.34,24),dark);wrist.position.y=1;fore.add(wrist);const palm=new THREE.Group();palm.position.y=1.18;hand.add(palm);let plate=new THREE.Mesh(new THREE.BoxGeometry(1.65,1.65,.34),dark);plate.position.y=.65;plate.geometry.rotateZ(.05);palm.add(plate);let plate2=new THREE.Mesh(new THREE.BoxGeometry(1.42,1.34,.42),metal);plate2.position.set(0,.65,-.18);palm.add(plate2);for(let y=0;y<3;y++){let bar=cyl(.06,1.28,jointMat,'x');bar.position.set(0,.16+y*.5,.26);palm.add(bar)}
-const fingers=[], tendonLines=[];const xs=[-.65,-.24,.2,.62];const lens=[[.58,.52,.42],[.72,.59,.46],[.78,.62,.48],[.69,.55,.42]];
-function knuckle(r=.16){let m=new THREE.Mesh(new THREE.SphereGeometry(r,18,12),jointMat);let cap=new THREE.Mesh(new THREE.CylinderGeometry(r*.52,r*.52,r*2.15,12),black);cap.rotation.z=Math.PI/2;m.add(cap);return m}
-for(let f=0;f<4;f++){let root=new THREE.Group();root.position.set(xs[f],1.48,0);palm.add(root);let joints=[], parent=root;for(let j=0;j<3;j++){let pivot=new THREE.Group();pivot.position.y=j?lens[f][j-1]:0;parent.add(pivot);let k=knuckle(j? .13:.17);pivot.add(k);let bone=cyl(j? .105:.13,lens[f][j],j===1?dark:metal);bone.position.y=lens[f][j]/2;pivot.add(bone);joints.push(pivot);parent=pivot}let tip=new THREE.Mesh(new THREE.SphereGeometry(.12,14,9),black);tip.scale.y=1.25;tip.position.y=lens[f][2];parent.add(tip);fingers.push({root,joints,lens,side:f});}
-// thumb
-let tr=new THREE.Group();tr.position.set(-.84,.78,.03);tr.rotation.z=.78;palm.add(tr);let tj=[],tp=tr;for(let j=0;j<3;j++){let p=new THREE.Group();p.position.y=j?[.58,.5][j-1]:0;tp.add(p);p.add(knuckle(j? .14:.18));let b=cyl(.12,[.58,.5,.38][j],j===1?dark:metal);b.position.y=[.58,.5,.38][j]/2;p.add(b);tj.push(p);tp=p}fingers.push({root:tr,joints:tj,thumb:true});
-// pistons and pulley details
-for(let x of [-.48,-.16,.16,.48]){let a=cyl(.07,.92,black);a.position.set(x,-.56,.42);fore.add(a);let b=cyl(.035,.92,jointMat);b.position.set(x,.08,.42);fore.add(b)}
-const cableGroup=new THREE.Group();scene.add(cableGroup);const cableMat=new THREE.LineBasicMaterial({color:0xb9ff2c,transparent:true,opacity:.88});const cableMat2=new THREE.LineBasicMaterial({color:0x36d9ff,transparent:true,opacity:.6});
-function updateCables(){cableGroup.clear();fingers.forEach((f,fi)=>{for(let side=0;side<2;side++){let pts=[];let base=new THREE.Vector3((f.thumb?-.55:xs[fi])+(side?-.08:.08),-1.65,.46);hand.localToWorld(base);pts.push(base);for(let j=0;j<3;j++){let p=new THREE.Vector3(side?-.075:.075,.08,.18);f.joints[j].localToWorld(p);pts.push(p)}let p2=new THREE.Vector3(0,.32,.12);f.joints[2].localToWorld(p2);pts.push(p2);let geom=new THREE.BufferGeometry().setFromPoints(pts);cableGroup.add(new THREE.Line(geom,side?cableMat:cableMat2))}})}
-const ghost=new THREE.Group();ghost.visible=false;scene.add(ghost);for(let i=0;i<4;i++){let o=new THREE.Mesh(new THREE.TorusGeometry(.9+i*.2,.012,4,64),new THREE.MeshBasicMaterial({color:0x36d9ff,transparent:true,opacity:.08}));o.position.set(0,2+i*.42,-.7);o.rotation.x=1.2;ghost.add(o)}
-let playing=true,seq=0,t=0,last=performance.now();const durations=[8,6,7.5,6.5];
-const ease=x=>x*x*(3-2*x), pulse=(x,a,b)=>ease(Math.max(0,Math.min(1,(x-a)/(b-a))))-ease(Math.max(0,Math.min(1,(x-(1-b))/(b-a))));
-function curls(time){let p=(time%durations[seq])/durations[seq],arr=[0,0,0,0,0];if(seq===0){arr=arr.map((_,i)=>.08+.65*(.5-.5*Math.cos((p*2+i*.14)*Math.PI*2)))}if(seq===1){let q=.5-.5*Math.cos(p*Math.PI*2);arr=[q*.92,.16,.1,.08,q*.82]}if(seq===2){arr=arr.map((_,i)=>.16+.72*(.5-.5*Math.cos((p*2-i*.18)*Math.PI*2)))}if(seq===3){let q=ease(Math.min(1,p*3))*ease(Math.min(1,(1-p)*3));arr=[q*.92,q*.9,q*.88,q*.84,q*.82]}return arr}
-function animate(now){requestAnimationFrame(animate);let dt=Math.min(.04,(now-last)/1000);last=now;if(playing)t+=dt;let c=curls(t);fingers.forEach((f,i)=>{f.joints.forEach((j,k)=>{let target=c[i]*(k===0?.72:k===1?1.03:.86);j.rotation.x=THREE.MathUtils.lerp(j.rotation.x,target,.11);j.rotation.z=THREE.MathUtils.lerp(j.rotation.z,(i-2)*.012,.08)});if(!f.thumb)f.root.rotation.z=THREE.MathUtils.lerp(f.root.rotation.z,(i-1.5)*.035,.06)});palm.rotation.y=Math.sin(t*.45)*.09;palm.rotation.z=Math.sin(t*.32)*.035;updateCables();cableGroup.visible=document.querySelector('#cables').classList.contains('on');controls.update();document.querySelector('#frame').textContent=String(Math.floor(t*120)%9999).padStart(4,'0');let p=(t%durations[seq])/durations[seq];document.querySelector('#progress').style.width=(p*100)+'%';document.querySelector('#now').textContent='00:'+String(Math.floor((t%durations[seq]))).padStart(2,'0')+':'+String(Math.floor(p*100)).padStart(2,'0');renderer.render(scene,camera)}animate(last);
-function select(s){seq=+s;t=0;document.querySelectorAll('.take').forEach(x=>x.classList.toggle('on',+x.dataset.seq===seq));document.querySelector('#dur').textContent='00:'+String(Math.floor(durations[seq])).padStart(2,'0')+':00'}document.querySelectorAll('.take').forEach(x=>x.onclick=()=>select(x.dataset.seq));document.querySelector('#play').onclick=e=>{playing=!playing;e.currentTarget.textContent=playing?'Ⅱ':'▶'};document.querySelector('#track').onclick=e=>{t=(e.offsetX/e.currentTarget.clientWidth)*durations[seq]};document.querySelector('#cables').onclick=e=>e.currentTarget.classList.toggle('on');document.querySelector('#ghost').onclick=e=>{e.currentTarget.classList.toggle('on');ghost.visible=e.currentTarget.classList.contains('on')};document.querySelector('#reset').onclick=()=>{t=0;camera.position.set(7.6,4.4,12);controls.target.set(.4,2.4,0)};addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-</script></body></html>
+let boot=document.getElementById('boot'),bootMsg=document.getElementById('bootMsg');
+function fail(msg){boot.classList.remove('gone');bootMsg.className='err';bootMsg.textContent=msg}
+let started=false;
+addEventListener('error',e=>{if(!started)fail('TENDON//LAB could not start. '+(e.message||'WebGL or network unavailable.'))});
+try{
+const THREE=await import('three');
+const {OrbitControls}=await import('https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js');
+const {RoomEnvironment}=await import('https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/environments/RoomEnvironment.js');
+
+/* ---------- renderer / scene ---------- */
+const host=document.getElementById('stage');
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x070a08,.02);
+const camera=new THREE.PerspectiveCamera(33,innerWidth/innerHeight,.1,100);
+const CAM_HOME=new THREE.Vector3(5.4,3.3,11.2), TGT_HOME=new THREE.Vector3(0,1.35,0);
+camera.position.copy(CAM_HOME);
+let renderer;
+try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'})}
+catch(err){fail('WebGL is not available in this browser.');throw err}
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+renderer.setSize(innerWidth,innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+host.appendChild(renderer.domElement);
+
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.copy(TGT_HOME);
+controls.enableDamping=true;controls.dampingFactor=.06;
+controls.minDistance=5.5;controls.maxDistance=17;
+controls.maxPolarAngle=1.52;
+controls.autoRotate=true;controls.autoRotateSpeed=.35;
+let idleTimer;controls.addEventListener('start',()=>{controls.autoRotate=false;clearTimeout(idleTimer)});
+controls.addEventListener('end',()=>{idleTimer=setTimeout(()=>controls.autoRotate=true,6000)});
+
+/* ---------- lights + environment ---------- */
+{
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;
+  pmrem.dispose();
+}
+scene.add(new THREE.HemisphereLight(0xbfd9cf,0x0c100d,.4));
+const key=new THREE.SpotLight(0xe8fff2,130,45,.48,.5,1.5);
+key.position.set(-4.5,9.5,9.5);key.castShadow=true;
+key.shadow.mapSize.set(1024,1024);key.shadow.bias=-.0004;key.shadow.radius=4;
+scene.add(key);
+const fill=new THREE.DirectionalLight(0xa9c8bf,.85);fill.position.set(6,3,9);scene.add(fill);
+const rim=new THREE.SpotLight(0x3fd9ff,60,30,.6,.7,1.8);rim.position.set(5,6,-8);scene.add(rim);
+const acidGlow=new THREE.PointLight(0xb9ff2c,2.5,6);acidGlow.position.set(0,1.2,2.6);scene.add(acidGlow);
+
+/* ---------- floor ---------- */
+const floor=new THREE.Mesh(new THREE.CircleGeometry(80,48),new THREE.MeshStandardMaterial({color:0x0a0d0b,roughness:.9,metalness:.15}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-2.4;floor.receiveShadow=true;scene.add(floor);
+const grid=new THREE.GridHelper(24,24,0x22332b,0x111a15);
+grid.position.y=-2.38;grid.material.transparent=true;grid.material.opacity=.55;scene.add(grid);
+
+/* ---------- materials ---------- */
+const matSteel=new THREE.MeshStandardMaterial({color:0x9aa8a3,metalness:.9,roughness:.28});
+const matDark=new THREE.MeshStandardMaterial({color:0x161d1b,metalness:.7,roughness:.34});
+const matBlack=new THREE.MeshStandardMaterial({color:0x090d0c,metalness:.55,roughness:.42});
+const matJoint=new THREE.MeshStandardMaterial({color:0xc4d1cb,metalness:.88,roughness:.2});
+const matAcid=new THREE.MeshStandardMaterial({color:0x101408,emissive:0xb9ff2c,emissiveIntensity:.55,metalness:.4,roughness:.5});
+const matPanel=new THREE.MeshStandardMaterial({color:0x232e2a,metalness:.55,roughness:.5});
+
+function shadowed(m){m.castShadow=true;return m}
+function cyl(r0,r1,l,mat=matSteel){return shadowed(new THREE.Mesh(new THREE.CylinderGeometry(r0,r1,l,20),mat))}
+function ball(r,mat=matJoint){return shadowed(new THREE.Mesh(new THREE.SphereGeometry(r,20,14),mat))}
+
+/* ---------- hand rig ----------
+   Palm faces +z (camera), fingers point +y, curl = +rotation.x (toward palm). */
+const hand=new THREE.Group();hand.rotation.y=-.32;hand.rotation.x=.04;scene.add(hand);
+
+/* finger layout (declared before palm: channels reference FINGER_X) */
+const FINGER_X=[-.8,-.27,.27,.8];
+const FINGER_FAN=[-.1,-.03,.03,.1];
+const FINGER_LEN=[[.8,.64,.5],[.95,.74,.56],[.87,.68,.52],[.64,.5,.4]]; // index middle ring pinky
+const FINGER_R=[.14,.15,.14,.12];
+
+/* forearm: short exposed cage with spool drums */
+const fore=new THREE.Group();hand.add(fore);
+{
+  const drum=new THREE.Mesh(new THREE.CylinderGeometry(.42,.48,.9,24),matSteel);
+  drum.position.y=-1.05;shadowed(drum);fore.add(drum);
+  for(let i=0;i<2;i++){
+    const spool=new THREE.Mesh(new THREE.TorusGeometry(.38,.055,10,28),i?matJoint:matDark);
+    spool.rotation.x=Math.PI/2;spool.position.set(0,-.78-i*.5,.3);shadowed(spool);fore.add(spool);
+  }
+  for(let a=0;a<4;a++){
+    const ang=a*Math.PI/2+Math.PI/4;
+    const rail=cyl(.05,.05,1.7,matDark);
+    rail.position.set(Math.cos(ang)*.48,-1.1,Math.sin(ang)*.48);
+    rail.rotation.z=Math.cos(ang)*.07;rail.rotation.x=-Math.sin(ang)*.07;
+    fore.add(rail);
+  }
+  const collar=new THREE.Mesh(new THREE.TorusGeometry(.46,.07,10,30),matJoint);
+  collar.rotation.x=Math.PI/2;collar.position.y=-.28;shadowed(collar);fore.add(collar);
+}
+/* wrist */
+const wrist=cyl(.38,.44,.5,matDark);wrist.position.y=-.05;fore.add(wrist);
+const wristCap=new THREE.Mesh(new THREE.TorusGeometry(.4,.035,8,26),matJoint);
+wristCap.rotation.x=Math.PI/2;wristCap.position.y=.18;fore.add(wristCap);
+
+/* palm: face plate + inset + tendon channels, anchored at wrist center */
+const palm=new THREE.Group();palm.position.y=.32;hand.add(palm);
+const PALM_W=2.05,PALM_H=1.68,PALM_D=.46;
+{
+  const plate=shadowed(new THREE.Mesh(new THREE.BoxGeometry(PALM_W,PALM_H,PALM_D),matSteel));
+  plate.position.y=PALM_H/2;palm.add(plate);
+  const inset=shadowed(new THREE.Mesh(new THREE.BoxGeometry(PALM_W*.82,PALM_H*.66,.06),matPanel));
+  inset.position.set(0,PALM_H*.5,PALM_D/2+.01);palm.add(inset);
+  for(let f=0;f<4;f++){
+    const ch=new THREE.Mesh(new THREE.BoxGeometry(.055,PALM_H*.52,.03),matBlack);
+    ch.position.set(FINGER_X[f],PALM_H*.56,PALM_D/2+.045);palm.add(ch);
+    const eyelet=new THREE.Mesh(new THREE.TorusGeometry(.05,.018,8,16),matJoint);
+    eyelet.position.set(FINGER_X[f],PALM_H*.86,PALM_D/2+.05);palm.add(eyelet);
+  }
+  const seam=new THREE.Mesh(new THREE.BoxGeometry(.045,PALM_H*.6,.02),matAcid);
+  seam.position.set(PALM_W*.36,PALM_H*.5,PALM_D/2+.05);palm.add(seam);
+  for(let sx of [-1,1])for(let sy of [0,1]){
+    const screw=ball(.042,matBlack);screw.position.set(sx*PALM_W*.4,PALM_H*(.18+sy*.64),PALM_D/2+.01);palm.add(screw);
+  }
+  const bar=cyl(.09,.09,PALM_W*.94,matJoint);bar.rotation.z=Math.PI/2;bar.position.y=PALM_H;palm.add(bar);
+}
+
+/* fingers */
+const fingers=[];
+function buildFinger(f){
+  const root=new THREE.Group();
+  root.position.set(FINGER_X[f],PALM_H-.02,0);
+  root.rotation.z=FINGER_FAN[f];
+  palm.add(root);
+  const joints=[];let parent=root;
+  const lens=FINGER_LEN[f],r=FINGER_R[f];
+  for(let j=0;j<3;j++){
+    const pivot=new THREE.Group();
+    pivot.position.y=j?lens[j-1]:0;
+    parent.add(pivot);
+    pivot.add(ball(j?r*.92:r*1.08));
+    const bone=cyl(r*.78,r*.68,lens[j],matSteel);
+    bone.position.y=lens[j]/2;pivot.add(bone);
+    joints.push(pivot);parent=pivot;
+  }
+  const tip=ball(r*.8,matBlack);tip.scale.y=1.3;tip.position.y=lens[2];parent.add(tip);
+  fingers.push({root,joints,lens,thumb:false});
+}
+for(let f=0;f<4;f++)buildFinger(f);
+
+/* thumb: two phalanges off the thenar edge */
+{
+  const root=new THREE.Group();
+  root.position.set(-PALM_W/2+.16,.5,.14);
+  root.rotation.z=.68;root.rotation.y=-.35;
+  palm.add(root);
+  const lens=[.62,.5],joints=[];let parent=root;
+  root.add(ball(.2));
+  for(let j=0;j<2;j++){
+    const pivot=new THREE.Group();
+    pivot.position.y=j?lens[j-1]:0;
+    parent.add(pivot);
+    pivot.add(ball(j?.15:.17));
+    const bone=cyl(.12,.105,lens[j],matSteel);
+    bone.position.y=lens[j]/2;pivot.add(bone);
+    joints.push(pivot);parent=pivot;
+  }
+  const tip=ball(.11,matBlack);tip.scale.y=1.3;tip.position.y=lens[1];parent.add(tip);
+  fingers.push({root,joints,lens,thumb:true});
+}
+
+/* ---------- tendons ----------
+   Flexor (palm side) + extensor (dorsal) per digit, smooth Catmull-Rom curves
+   through guide points. Buffers preallocated, updated in place. */
+const cableGroup=new THREE.Group();scene.add(cableGroup);
+const matFlex=new THREE.LineBasicMaterial({color:0xcfff5e,transparent:true,opacity:.95});
+const matExt=new THREE.LineBasicMaterial({color:0x3fd9ff,transparent:true,opacity:.45});
+const CABLE_PTS=36;
+const cables=[];
+const _v=new THREE.Vector3(),_prev=new THREE.Vector3();
+function addCable(finger,side){
+  const guides=[];
+  const fi=fingers.indexOf(finger);
+  const spread=finger.thumb?-1.1:(FINGER_X[fi]||0)/.8;
+  const fx=finger.thumb?-PALM_W/2+.16:finger.root.position.x;
+  guides.push({obj:fore,p:new THREE.Vector3(spread*.14,-.82,.22*side)});
+  guides.push({obj:fore,p:new THREE.Vector3(spread*.22,-.05,.34*side)});
+  guides.push({obj:palm,p:new THREE.Vector3(fx*.55,finger.thumb?.3:PALM_H*.22,(PALM_D/2+.1)*side)});
+  guides.push({obj:palm,p:new THREE.Vector3(fx,finger.thumb?.55:PALM_H*.72,(PALM_D/2+.1)*side)});
+  finger.joints.forEach(j=>guides.push({obj:j,p:new THREE.Vector3(0,.03,.15*side)}));
+  const lastJoint=finger.joints[finger.joints.length-1];
+  guides.push({obj:lastJoint,p:new THREE.Vector3(0,finger.lens[finger.lens.length-1]*.85,.1*side)});
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(CABLE_PTS*3),3));
+  const line=new THREE.Line(geo,side>0?matFlex:matExt);
+  line.frustumCulled=false;
+  cableGroup.add(line);
+  cables.push({line,guides,rest:0,len:0});
+}
+fingers.forEach(f=>{addCable(f,1);addCable(f,-1)});
+
+const _pts=Array.from({length:16},()=>new THREE.Vector3());
+const _curve=new THREE.CatmullRomCurve3();
+function updateCables(){
+  for(const c of cables){
+    const n=c.guides.length;
+    for(let i=0;i<n;i++){c.guides[i].obj.localToWorld(_pts[i].copy(c.guides[i].p))}
+    _curve.points=_pts.slice(0,n);
+    const pos=c.line.geometry.attributes.position;
+    let len=0;
+    for(let i=0;i<CABLE_PTS;i++){
+      _curve.getPoint(i/(CABLE_PTS-1),_v);
+      pos.setXYZ(i,_v.x,_v.y,_v.z);
+      if(i)len+=_v.distanceTo(_prev);
+      _prev.copy(_v);
+    }
+    pos.needsUpdate=true;
+    if(!c.rest)c.rest=len;
+    c.len=len;
+  }
+}
+
+/* ---------- ghost: neutral-pose wireframe reference ---------- */
+const ghost=hand.clone(true);
+ghost.traverse(o=>{
+  if(o.isMesh){o.material=new THREE.MeshBasicMaterial({color:0x3fd9ff,wireframe:true,transparent:true,opacity:.07});o.castShadow=false}
+});
+ghost.visible=false;scene.add(ghost);
+
+/* ---------- motion ---------- */
+const durations=[8,6,7.5,6.5];
+const SEQ_NAMES=['SYSTEM CHECK','PINCH / RELEASE','TENDON WAVE','POWER GRIP'];
+const ease=x=>x*x*(3-2*x);
+let seq=0;
+function curls(time){
+  const d=durations[seq],p=(time%d)/d;
+  const out=[.14,.1,.12,.16,.12]; // natural rest splay
+  if(seq===0){ // system check: each digit flexes in turn
+    for(let i=0;i<5;i++){
+      const ph=(p*5-i+5)%5;
+      const v=ph<1?ease(Math.min(1,ph*1.6))*(ph>.62?Math.max(0,1-(ph-.62)*2.6):1):0;
+      out[i]+=.84*Math.min(1,Math.max(0,v));
+    }
+  }else if(seq===1){ // pinch: thumb + index meet
+    const q=.5-.5*Math.cos(p*Math.PI*2);
+    out[0]+=q*.8;out[4]+=q*.75;
+  }else if(seq===2){ // traveling wave
+    for(let i=0;i<5;i++)out[i]+=.68*(.5-.5*Math.cos((p*2-i*.22)*Math.PI*2));
+  }else{ // power grip: close, hold, release
+    const q=ease(Math.min(1,p*3.2))*ease(Math.min(1,(1-p)*3.2));
+    for(let i=0;i<5;i++)out[i]+=q*(.85-i*.02);
+  }
+  return out;
+}
+
+/* ---------- ui wiring ---------- */
+const $=id=>document.getElementById(id);
+let playing=true,t=0,last=performance.now();
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(reduced){controls.autoRotate=false}
+
+function fmt(s){return '00:'+s.toFixed(1).padStart(4,'0')}
+
+function makeTake(i,parent){
+  const b=document.createElement('button');
+  b.className='take'+(i===0?' on':'');
+  b.innerHTML=`<span class="num">0${i+1}</span><span class="name">${SEQ_NAMES[i]}</span><span class="time">${durations[i].toFixed(1)}s</span>`;
+  b.onclick=()=>select(i);
+  parent.appendChild(b);
+}
+for(let i=0;i<4;i++){makeTake(i,$('seqPanel'));makeTake(i,$('seqBar'))}
+
+function select(s){
+  seq=s;t=0;
+  document.querySelectorAll('.take').forEach(x=>x.classList.toggle('on',+x.querySelector('.num').textContent===s+1));
+  $('dur').textContent=fmt(durations[seq]);
+}
+function setPlaying(p){
+  playing=p;
+  $('play').innerHTML=p?'&#10074;&#10074;':'&#9654;';
+  $('statusText').textContent=p?'RUNNING':'PAUSED';
+}
+$('play').onclick=()=>setPlaying(!playing);
+$('track').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();t=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*durations[seq]};
+$('cables').onclick=e=>{e.currentTarget.classList.toggle('on');cableGroup.visible=e.currentTarget.classList.contains('on')};
+$('ghost').onclick=e=>{e.currentTarget.classList.toggle('on');ghost.visible=e.currentTarget.classList.contains('on')};
+$('reset').onclick=()=>{t=0;camera.position.copy(CAM_HOME);controls.target.copy(TGT_HOME);fitCamera()};
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();setPlaying(!playing)}
+  else if(e.key>='1'&&e.key<='4')select(+e.key-1);
+  else if(e.key==='ArrowRight')t=Math.min(t+.5,durations[seq]);
+  else if(e.key==='ArrowLeft')t=Math.max(t-.5,0);
+});
+
+/* ---------- responsive framing ---------- */
+function fitCamera(){
+  const a=innerWidth/innerHeight;
+  camera.aspect=a;camera.updateProjectionMatrix();
+  const d=a<1?Math.min(2.1,1/Math.max(a,.42)):1;
+  const dir=camera.position.clone().sub(controls.target).normalize();
+  const dist=CAM_HOME.distanceTo(TGT_HOME)*d;
+  camera.position.copy(controls.target).addScaledVector(dir,dist);
+  controls.minDistance=5.5*d;controls.maxDistance=17*d;
+  renderer.setSize(innerWidth,innerHeight);
+}
+addEventListener('resize',fitCamera);
+
+/* ---------- main loop ---------- */
+let fpsAcc=0,fpsN=0,fpsT=0;
+function animate(now){
+  requestAnimationFrame(animate);
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(playing)t+=dt;
+  const c=curls(t);
+  let flexSum=0,jointN=0;
+  fingers.forEach((f,i)=>{
+    f.joints.forEach((j,k)=>{
+      const maxA=f.thumb?1.15:1.35;
+      const target=c[i]*(f.thumb?(k===0?.55:.75):(k===0?.62:k===1?1.0:.82))*maxA;
+      j.rotation.x+=(target-j.rotation.x)*Math.min(1,dt*9);
+      flexSum+=j.rotation.x;jointN++;
+      if(!f.thumb)j.rotation.z+=(((i-1.5)*.012*c[i])-j.rotation.z)*Math.min(1,dt*6);
+    });
+  });
+  palm.rotation.y=Math.sin(t*.4)*.06;
+  palm.rotation.x=Math.sin(t*.27)*.02;
+  fore.rotation.y=palm.rotation.y*.5;
+  updateCables();
+
+  fpsAcc+=1/Math.max(dt,1e-4);fpsN++;fpsT+=dt;
+  if(fpsT>.2){
+    $('fps').textContent=String(Math.round(fpsAcc/fpsN));
+    $('flexion').textContent=Math.round(flexSum/jointN*57.3)+'°';
+    let travel=0;for(const cb of cables)travel+=Math.abs(cb.len-cb.rest);
+    $('travel').innerHTML=(travel*1.6).toFixed(1)+'<em>cm</em>';
+    fpsAcc=0;fpsN=0;fpsT=0;
+  }
+  const d=durations[seq],p=(t%d)/d;
+  $('progress').style.width=(p*100)+'%';
+  $('head').style.left=(p*100)+'%';
+  $('now').textContent=fmt(t%d);
+
+  controls.update();
+  renderer.render(scene,camera);
+  if(!started){started=true;boot.classList.add('gone')}
+}
+fitCamera();
+animate(last);
+}catch(err){
+  if(!started)fail('TENDON//LAB could not start. '+(err&&err.message?err.message:'WebGL or network unavailable.'));
+}
+</script>
+</body>
+</html>
